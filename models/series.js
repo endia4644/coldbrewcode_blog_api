@@ -22,7 +22,11 @@ module.exports = (sequelize, DataTypes) => {
   Series.associate = (db) => {
     db.Series.belongsToMany(db.Post, { through: db.SeriesPost });
     db.Series.belongsToMany(db.TempPost, { through: db.TempSeriesPost, });
-    db.Series.hasMany(db.Image);
+    db.Series.hasMany(db.Image, {
+      foreignKey: 'SeriesId',
+      onDelete: 'CASCADE',
+      hooks: true,  // Sequelize에서 CASCADE가 제대로 동작하려면 필요
+    });
   }
   return Series;
 }

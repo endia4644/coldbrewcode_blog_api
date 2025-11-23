@@ -63,15 +63,27 @@ db.sequelize.sync(); // {force: true}
 passportConfig();
 
 if (prod) {
-  app.use(hpp());
-  app.use(helmet());
-  app.use(morgan("combined"));
-  app.use(
-    cors({
-      origin: process.env.FO_URL,
-      credentials: true,
-    })
-  );
+    // 1) CORS 먼저
+    app.options("*", cors({
+        origin: process.env.FO_URL,
+        credentials: true,
+    }));
+
+    app.use(cors({
+        origin: process.env.FO_URL,
+        credentials: true,
+    }));
+
+    // 2) 필수: CORS 뒤에 helmet
+    app.use(helmet({
+        crossOriginResourcePolicy: false, // CORS 막지 않게
+    }));
+
+    // 3) 그 다음 hpp
+    app.use(hpp());
+
+    // 4) 마지막에 morgan
+    app.use(morgan("combined"));
 } else {
   app.use(morgan("dev"));
   app.use(
