@@ -63,17 +63,15 @@ db.sequelize.sync(); // {force: true}
 passportConfig();
 
 if (prod) {
-  app.use(hpp());
-
-  app.use(
-      cors({
-        origin: process.env.FO_URL,
-        credentials: true,
-      })
-  );
-
-  app.use(helmet());
-  app.use(morgan("combined"));
+    app.use(hpp());
+    app.use(helmet());
+    app.use(morgan("combined"));
+    app.use(
+        cors({
+            origin: process.env.FO_URL,
+            credentials: true,
+        })
+    );
 } else {
   app.use(morgan("dev"));
   app.use(
