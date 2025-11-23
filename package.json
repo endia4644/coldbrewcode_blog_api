@@ -4,7 +4,7 @@
   "description": "",
   "main": "app.js",
   "scripts": {
-    "prd": "cross-env NODE_ENV=production pm2 start app.js -i 2 --watch --ignore-watch uploads",
+    "prd": "cross-env NODE_ENV=production pm2 start app.js -i 2 --no-watch",
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "nodemon app.js"
   },
