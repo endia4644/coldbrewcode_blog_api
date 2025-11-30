@@ -207,7 +207,11 @@ router.get("/logout", isLoggedIn, (req, res) => {
           })
         );
       } else {
-        req.session.destroy(null); // 선택사항
+        if (req.session) {
+          req.session.destroy(err => {
+            if (err) console.error("세션 삭제 실패:", err);
+          });
+        }
         return res.send(
           makeResponse({ resultMessage: "로그아웃 되었습니다." })
         );
