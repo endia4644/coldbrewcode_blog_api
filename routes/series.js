@@ -281,6 +281,7 @@ router.patch("/image", isLoggedIn, async (req, res, next) => {
                 [Op.eq]: series?.id,
               },
             },
+            transaction: t, // 이 쿼리를 트랜잭션 처리
           }
         );
         /* 포스트의 기존 이미지의 사용여부를 N으로 변경한다. */
@@ -294,6 +295,9 @@ router.patch("/image", isLoggedIn, async (req, res, next) => {
               SeriesId: {
                 [Op.eq]: series?.id,
               },
+              id: {
+                [Op.ne]: req.body.imageId
+              } // 현재 이미지는 제외하고 나머지 업데이트
             },
             transaction: t, // 이 쿼리를 트랜잭션 처리
           }
