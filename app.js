@@ -122,7 +122,7 @@ app.use(function (error, req, res, next) {
 app.listen(3085, () => {
   console.log(`백엔드 서버 ${3085}번 포트에서 작동중.`);
   if (process.env.NODE_ENV === 'production') {
-    schedule.scheduleJob('*/12 * * *', function () {
+    schedule.scheduleJob('0 3 * * *', function () {
       // newPostSend();
       // commentNotice();
       notUsedImageDelete();

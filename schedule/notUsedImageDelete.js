@@ -5,7 +5,7 @@ const fs = require("fs");
 module.exports = async () => {
   try {
     let curr = new Date();
-    curr.setHours(curr.getHours() - 12);
+    curr.setDate(curr.getDate() - 7);
 
     //* 트랜잭션 설정
     await db.sequelize.transaction(async (t) => {
