@@ -2,7 +2,7 @@
 const express = require("express");
 const { isLoggedIn } = require("./middleware");
 const db = require("../models");
-const { fn, col, Op, literal } = require("sequelize");
+const { Op, literal } = require("sequelize");
 const { makeResponse } = require("../util");
 
 const router = express.Router();
@@ -14,17 +14,20 @@ router.post("/", isLoggedIn, async (req, res, next) => {
       await db.Series.create(
         {
           seriesName: req.body.seriesName,
+          UserId: req.user.id,
         },
         {
           transaction: t, // 이 쿼리를 트랜잭션 처리
         }
       );
       const series = await db.Series.findAll({
+        where: { UserId: req.user.id },
         attributes: ["seriesName"],
         order: [["createdAt", "DESC"]],
         transaction: t, // 이 쿼리를 트랜잭션 처리
       });
       const seriesTotalCount = await db.Series.count({
+        where: { UserId: req.user.id },
         transaction: t, // 이 쿼리를 트랜잭션 처리
       });
       return res.send(
@@ -39,6 +42,7 @@ router.post("/", isLoggedIn, async (req, res, next) => {
 
 router.get("/", async (req, res, next) => {
   try {
+    const nickname = req.query.nickname;
     const series = await db.Series.findAll({
       attributes: [
         "id",
@@ -54,6 +58,11 @@ router.get("/", async (req, res, next) => {
         "updatedAt",
       ],
       include: [
+        {
+          model: db.User,
+          where: { nickName: nickname }, // 유저 닉네임으로 필터링
+          attributes: ['id', 'nickName', 'profileImg'], // 필요한 유저 정보만
+        },
         {
           model: db.Post,
           required: false,
@@ -73,7 +82,15 @@ router.get("/", async (req, res, next) => {
       offset: parseInt(req.query.offset) || 0,
       limit: parseInt(req.query.limit, 10) || 8,
     });
-    const seriesTotalCount = await db.Series.count();
+    const seriesTotalCount = await db.Series.count({
+      include: [
+        {
+          model: db.User,
+          where: { nickName: nickname }, // 유저 닉네임으로 필터링
+          attributes: ['id', 'nickName', 'profileImg'], // 필요한 유저 정보만
+        },
+      ],
+    });
     return res.send(
       makeResponse({ data: series, totalCount: seriesTotalCount })
     );
@@ -89,10 +106,17 @@ router.get("/", async (req, res, next) => {
 router.get("/name", async (req, res, next) => {
   try {
     const series = await db.Series.findAll({
+      where: {
+        UserId: req.user.id
+      },
       attributes: ["id", "seriesName", "seriesThumbnail"],
       order: [["createdAt", "DESC"]],
     });
-    const seriesTotalCount = await db.Series.count();
+    const seriesTotalCount = await db.Series.count({
+      where: {
+        UserId: req.user.id
+      },
+    });
     return res.send(
       makeResponse({ data: series, totalCount: seriesTotalCount })
     );
@@ -113,6 +137,10 @@ router.get("/:id", async (req, res, next) => {
       },
       attributes: ["id", "seriesName", "createdAt", "updatedAt"],
       include: [
+        {
+          model: db.User,
+          attributes: ['id'], // 필요한 유저 정보만
+        },
         {
           model: db.Post,
           required: false,
@@ -212,6 +240,14 @@ router.patch("/:id/order", isLoggedIn, async (req, res, next) => {
         include: [
           {
             model: db.Post,
+            include: [
+              {
+                model: db.User,
+                where: { nickName: { [Op.eq]: nickname } },
+                required: !!nickname,
+                attributes: ["id", "email", "nickName", "profileImg"],
+              },
+            ],
             where: {
               dltYsno: {
                 [Op.eq]: "N",
@@ -415,18 +451,23 @@ router.delete("/:id", isLoggedIn, async (req, res, next) => {
 router.delete("/:id", isLoggedIn, async (req, res, next) => {
   try {
     await db.sequelize.transaction(async (t) => {
-      await db.SeriesPost.destroy({
-        where: {
-          SeriesId: req.params.id,
-        },
-        transaction: t, // 이 쿼리를 트랜잭션 처리
-      });
-      await db.Series.destroy({
+      const cnt = await db.Series.destroy({
         where: {
           id: req.params.id,
+          UserId: req.user.id,
         },
         transaction: t, // 이 쿼리를 트랜잭션 처리
       });
+      if(cnt > 0) {
+        await db.SeriesPost.destroy({
+          where: {
+            SeriesId: req.params.id,
+          },
+          transaction: t, // 이 쿼리를 트랜잭션 처리
+        });
+      } else {
+        throw new Error(`시리즈 작성자의 삭제시도가 아닙니다. ::: UserId ${req.user.id}`);
+      }
     });
     return res.send(makeResponse({ data: "SUCCESS" }));
   } catch (err) {

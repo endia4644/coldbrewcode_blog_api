@@ -4,6 +4,7 @@ const { isLoggedIn } = require("./middleware");
 const db = require("../models");
 const { Op, literal, fn, col } = require("sequelize");
 const { makeResponse } = require("../util");
+const {isEmpty} = require("../util/common");
 
 const router = express.Router();
 
@@ -325,11 +326,14 @@ router.get("/", async (req, res, next) => {
     let hashtag = req.query.hashtag;
     const postId = {};
     const search = req.query.search;
-    const postName = {};
+    const nickname = req.query.nickname;
+    const tab = req.query.tab || "latest";
+    const period = req.query.period || "week";
     const postIdList = [];
     const permission = {};
     let mainWhere = null;
     let countWhere = null;
+    let userWhere = null;
     /* 태그 조회인 경우 */
     if (hashtag) {
       hashtag = await db.Hashtag.findAll({
@@ -349,11 +353,17 @@ router.get("/", async (req, res, next) => {
       postId[Op.not] = null;
     }
 
-    /* 비공개 포스트 필터링 */
-    if (req?.user?.userType === "admin") {
-      permission[Op.not] = null;
-    } else {
+    if(isEmpty(nickname)) {
       permission[Op.eq] = "public";
+    } else {
+      /* 비공개 포스트 필터링 */
+      if (req?.user?.nickName === nickname) {
+        permission[Op.not] = null;
+      } else {
+        permission[Op.eq] = "public";
+      }
+      // nickname 존재 여부에 따른 조건부 where 객체 생성
+      userWhere = nickname ? { nickName: { [Op.eq]: nickname } } : null;
     }
 
     /* 검색 조회인 경우 */
@@ -407,10 +417,21 @@ router.get("/", async (req, res, next) => {
       };
     }
 
+    // TODO: 고도화 시 period 기준을 PostLikeUser.createdAt 등 인터랙션 발생 시점으로 변경
+    // 현재는 점수 순 정렬만 적용 (글 작성일 기간 필터 미적용)
+
+    const trendingScore = literal(
+      `(Post.viewCount * 1) + (SELECT COUNT(1) FROM postlikeusers WHERE PostId = Post.id) * 5 + (SELECT COUNT(1) FROM Comments WHERE Comments.PostId = Post.id AND Comments.dltYsno = 'N') * 2`
+    );
+    const order = tab === "trending"
+      ? [[trendingScore, "DESC"]]
+      : [["createdAt", "DESC"]];
+
     const posts = await db.Post.findAll({
       where: mainWhere,
       attributes: [
         "id",
+        "viewCount",
         "postContent",
         "postName",
         "postDescription",
@@ -443,6 +464,8 @@ router.get("/", async (req, res, next) => {
       include: [
         {
           model: db.User,
+          where: userWhere,
+          required: !!nickname,
           attributes: ["id", "email", "nickName", "profileImg"],
         },
         {
@@ -452,7 +475,7 @@ router.get("/", async (req, res, next) => {
           through: { attributes: [] },
         },
       ],
-      order: [["createdAt", "DESC"]],
+      order,
       offset: parseInt(req.query.offset) || 0,
       limit: parseInt(req.query.limit, 10) || 8,
     });
@@ -1046,6 +1069,11 @@ router.get("/:id", async (req, res, next) => {
         post.set("likeCount", likes.length);
         post.set("likeYsno", likeCurrentUser);
         post.set("commentCount", commentCount);
+        // TODO: 세션/IP 기반 중복 조회 방지로 고도화 가능
+        await db.Post.increment("viewCount", {
+          where: { id: req.params.id },
+          transaction: t,
+        });
       }
       return res.send(makeResponse({ data: post }));
     });

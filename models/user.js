@@ -47,6 +47,7 @@ module.exports = (sequelize, DataTypes) => {
   );
 
   User.associate = (db) => {
+    db.User.hasMany(db.Series, { foreignKey: 'UserId', sourceKey: 'id' });
     db.User.belongsToMany(db.Post, {
       through: db.PostLikeUser,
       foreignKey: 'UserId',

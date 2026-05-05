@@ -20,6 +20,7 @@ module.exports = (sequelize, DataTypes) => {
     collate: 'utf8_general_ci'
   });
   Series.associate = (db) => {
+    db.Series.belongsTo(db.User, { foreignKey: 'UserId', targetKey: 'id' });
     db.Series.belongsToMany(db.Post, { through: db.SeriesPost });
     db.Series.belongsToMany(db.TempPost, { through: db.TempSeriesPost, });
     db.Series.hasMany(db.Image, {
