@@ -498,9 +498,8 @@ router.get("/temp", isLoggedIn, async (req, res, next) => {
   try {
     const posts = await db.TempPost.findAll({
       where: {
-        PostId: {
-          [Op.is]: null,
-        },
+        PostId: { [Op.is]: null },
+        UserId: req.user.id,
       },
       attributes: [
         "id",
@@ -532,9 +531,8 @@ router.get("/temp", isLoggedIn, async (req, res, next) => {
     });
     const postCnt = await db.TempPost.count({
       where: {
-        PostId: {
-          [Op.is]: null,
-        },
+        PostId: { [Op.is]: null },
+        UserId: req.user.id,
       },
     });
     return res.send(makeResponse({ data: posts, totalCount: postCnt }));
