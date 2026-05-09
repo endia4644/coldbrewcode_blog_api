@@ -130,16 +130,26 @@ router.post("/email", isNotLoggedIn, async (req, res, next) => {
     const href = `${process.env.FO_URL}/blog/register/${id}`;
 
     const template = `
-          <div>
-            <div style="max-width: 100%; width: 400px; margin: 0 auto; padding: 1rem; text-align: justify; background: #f8f9fa; border: 1px solid #dee2e6; box-sizing: border-box; border-radius: 4px; color: #868e96; margin-top: 0.5rem; box-sizing: border-box;" id="ext-gen1043"><b style="black">안녕하세요!</b> 회원가입을 계속하시려면 하단의 링크를 클릭하세요. 만약에 실수로 요청하셨거나, 본인이 요청하지 않았다면, 이 메일을 무시하세요.</div>
-            <a href="${href}" style="width: 400px; text-decoration: none; text-align:center; display:block; margin: 0 auto; margin-top: 1rem; background: #845ef7; padding-top: 1rem; color: white; font-size: 1.25rem; padding-bottom: 1rem; font-weight: 600; border-radius: 4px;" target="_blank">계속하기</a>
-            <div style="text-align: center; margin-top: 1rem; color: #868e96; font-size: 0.85rem;">
-            <div>위 버튼을 클릭하시거나, 다음 링크를 열으세요:<br>
-              <a style="color: #b197fc;" href="${href}" target="_blank">${href}</a></div>
-              <br>
-              <div>이 링크는 24시간동안 유효합니다.</div>
-            </div>
-          </div>
+          <table width="400" cellpadding="0" cellspacing="0" border="0" style="margin: 0 auto;">
+            <tr>
+              <td width="400" style="padding: 1rem; background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 4px; color: #868e96; text-align: justify; box-sizing: border-box;">
+                <b>안녕하세요!</b> 회원가입을 계속하시려면 하단의 링크를 클릭하세요. 만약에 실수로 요청하셨거나, 본인이 요청하지 않았다면, 이 메일을 무시하세요.
+              </td>
+            </tr>
+            <tr>
+              <td width="400" style="padding-top: 1rem;">
+                <a href="${href}" style="display: block; width: 100%; text-decoration: none; text-align: center; background: #845ef7; padding: 1rem 0; color: white; font-size: 1.25rem; font-weight: 600; border-radius: 4px; box-sizing: border-box;" target="_blank">계속하기</a>
+              </td>
+            </tr>
+            <tr>
+              <td width="400" style="text-align: center; padding-top: 1rem; color: #868e96; font-size: 0.85rem;">
+                위 버튼을 클릭하시거나, 다음 링크를 열으세요:<br>
+                <a style="color: #b197fc;" href="${href}" target="_blank">${href}</a>
+                <br><br>
+                이 링크는 24시간동안 유효합니다.
+              </td>
+            </tr>
+          </table>
         `;
 
     const subject = "ColdBrewCode 회원가입";
